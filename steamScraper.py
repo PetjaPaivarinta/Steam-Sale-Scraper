@@ -4,45 +4,10 @@ import json
 import pandas as pd
 import csv
 import tkinter as tk
-from tkinter import *
+from tkinter import ttk
+import os
 
-passScreen = tk.Tk()
-passScreen.geometry("1200x800")
-passScreen.title("Games")
-
-frame = tk.Frame(passScreen)
-frame.pack(fill=tk.BOTH, expand=True)
-
-canvas = tk.Canvas(frame)
-canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-scrollbar = Scrollbar(frame, orient=tk.VERTICAL, command=canvas.yview)
-scrollbar.pack ( side = tk.RIGHT, fill=tk.Y )
-
-canvas.configure(yscrollcommand=scrollbar.set)
-canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
-
-content_frame = tk.Frame(canvas)
-canvas.create_window((0,0), window=content_frame, anchor='nw')
-
-col_names = ("Title", "Original Price", "Discounted Price", "Release Date", "Discount Percentage")
-
-for i, col_name in enumerate(col_names, start=1):
-    tk.Label(content_frame, text=col_name).grid(row=3, column=i, padx=40)
-
-with open("games_data.csv", "r", newline="") as passfile:
-    reader = csv.reader(passfile)
-    data = list(reader)
-
-entrieslist = []
-for i, row in enumerate(data, start=4):
-    for col in range(5):
-        tk.Label(content_frame, text=row[col]).grid(row=i, column=col+1)
-
-
-passScreen.mainloop()
-
-url = 'https://store.steampowered.com/search/results/?query&start=0&count=100&dynamic_data=&sort_by=_ASC&snr=1_7_7_7000_7&filter=topsellers&specials=1&infinite=1'
+url = 'https://store.steampowered.com/search/results/?query&start=0&count=300&dynamic_data=&sort_by=_ASC&snr=1_7_7_7000_7&filter=topsellers&specials=1&infinite=1'
 
 def get_data(url):
     r = requests.get(url)
@@ -78,7 +43,54 @@ def parse(data):
             # Write all the game data rows
             writer.writerows(game_data)
 
-        print("Succesfully printed")
+def load_csv_data():
+    if os.path.exists('games_data.csv'):
+        with open("games_data.csv", "r", newline="", encoding='utf-8') as passfile:
+            reader = csv.reader(passfile)
+            for row in reader:
+                tree.insert("", tk.END, values=row)
+
+passScreen = tk.Tk()
+passScreen.geometry("1200x800")
+passScreen.title("Games")
+
+# Create a frame for the Treeview widget
+frame = tk.Frame(passScreen)
+frame.pack(fill=tk.BOTH, expand=True)
+
+# Set up the Treeview widget
+tree = ttk.Treeview(frame, columns=("Title", "Original Price", "Discounted Price", "Release Date", "Discount Percentage"), show='headings')
+tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+# Define column headings
+tree.heading("Title", text="Title")
+tree.heading("Original Price", text="Original Price")
+tree.heading("Discounted Price", text="Discounted Price")
+tree.heading("Release Date", text="Release Date")
+tree.heading("Discount Percentage", text="Discount Percentage")
+
+# Set column widths
+tree.column("Title", width=300)
+tree.column("Original Price", width=150)
+tree.column("Discounted Price", width=150)
+tree.column("Release Date", width=150)
+tree.column("Discount Percentage", width=150)
+
+# Add a scrollbar to the Treeview widget
+scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+tree.configure(yscrollcommand=scrollbar.set)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+if not os.path.exists("games_data.csv"):
+    print("File not found. Fetching data...")
+    data = get_data(url)
+    parse(data)
+else:
+    print("File found. Loading data...")
+
+load_csv_data()
+
+passScreen.mainloop()
 
 data = get_data(url)
 parse(data)

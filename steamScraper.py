@@ -44,7 +44,5 @@ def parse(data):
 
         print("Succesfully printed")
 
-        input("Press enter to proceed...")
-
 data = get_data(url)
 parse(data)
